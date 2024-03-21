@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "exptra",
+    "slug": "exptra",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/android-chrome-512x512.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/android-chrome-512x512.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.immanuelkirubaharan.exptra",
+      "permissions": [
+        "READ_SMS"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.ico"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "25afff23-a533-497d-a951-d57456f44dbf"
+      }
+    }
+  }
+}
