@@ -1,22 +1,22 @@
 import {
 	Keyboard,
 	KeyboardAvoidingView,
-	Platform,
 	StyleSheet,
 	Text,
 	TextInput,
 	TouchableOpacity,
 	TouchableWithoutFeedback,
 	View,
+	FlatList,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import RNPickerSelect from "react-native-picker-select";
 import { StatusBar } from "expo-status-bar";
 import { showMessage } from "react-native-flash-message";
 import { useState } from "react";
-import { addExpense } from "../redux/actions";
-import { useSelector, useDispatch } from 'react-redux';
+import { firebase, db } from "../../firebase";
+import { Timestamp, addDoc, collection, orderBy, query, updateDoc } from "firebase/firestore";
+import { useCollectionData } from "react-firebase-hooks/firestore";
 
 
 function formatDate(date) {
@@ -28,16 +28,27 @@ function formatDate(date) {
 }
 
 const NewExpense = ({ navigation }) => {
-	const dispatch = useDispatch();
-	const categories = useSelector((state) => state.categories);
+	const auth = firebase.getAuth();
+	const user = auth.currentUser;
+
+	const [categories, loading, error] = useCollectionData(
+		query(
+			collection(db, "users", user.uid, "categories"),
+			orderBy("name", "asc")
+		)
+	);
+	const usersCollectionRef = collection(db, "users", user.uid, "expenses");
 
 	const [category, setCategory] = useState("");
 	const [expense, setExpense] = useState("");
 	const [amount, setAmount] = useState("");
 	const [date, setDate] = useState(new Date());
 	const [show, setShow] = useState(false);
+	const [showCategory, setShowCategory] = useState(false);
+	const [icon, setIcon] = useState("cash");
+	const [id, setId] = useState("Cash");
 
-	const createExpense = () => {
+	const createExpense = async () => {
 		if (!(expense.trim().length > 0 && amount.trim().length > 0)) {
 			showMessage({
 				message: "Please fill all fields",
@@ -62,23 +73,36 @@ const NewExpense = ({ navigation }) => {
 			return;
 		}
 
-		dispatch(
-			addExpense({
-				name: expense,
-				amount: parseFloat(amount),
-				category: parseInt(category),
-				date: formatDate(date),
-			})
-		);
-		setCategory(null);
-		setExpense("");
-		setAmount("");
+		await addDoc(usersCollectionRef, {
+			name: expense,
+			amount: parseFloat(amount),
+			category: category,
+			date: Timestamp.fromDate(date),
+		}).then(async (docRef) => {
+			await updateDoc(docRef, { id: docRef.id });
+			showMessage({
+				message: "Expense Added successfully!",
+				type: "success",
+			});
+		});
+
+		setCategory('');
+		setExpense('');
+		setAmount('');
 		setDate(new Date());
+
 		navigation.navigate('Dashboard');
 	};
 
+	const renderIcons = ({ item }) => (
+		<TouchableOpacity style={styles.item} key={item.id} onPress={() => { setCategory(item.id); setIcon(item.icon); setId(item.name); setShowCategory(false); }}>
+			<Ionicons name={item.icon} style={{ color: `#${((1 << 24) * Math.random() | 0).toString(16).padStart(6, '0')}` }} size={32} />
+			<Text style={{ fontSize: 10 }}>{item.name}</Text>
+		</TouchableOpacity>
+	);
+
 	return (
-		<TouchableWithoutFeedback onPress={null}>
+		<TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
 			<KeyboardAvoidingView
 				style={styles.container}
 				behavior={undefined}>
@@ -92,7 +116,6 @@ const NewExpense = ({ navigation }) => {
 							maxLength={30}
 						/>
 					</View>
-
 					<View style={styles.input}>
 						<TextInput
 							style={{ height: 50 }}
@@ -103,7 +126,6 @@ const NewExpense = ({ navigation }) => {
 							keyboardType={"numeric"}
 						/>
 					</View>
-
 					<TouchableOpacity onPress={() => setShow(true)}>
 						<View style={styles.datePicker}>
 							<Text style={{ color: '#a3a3a3' }}>{formatDate(date)}</Text>
@@ -115,7 +137,6 @@ const NewExpense = ({ navigation }) => {
 							/>
 						</View>
 					</TouchableOpacity>
-
 					{show && (
 						<DateTimePicker
 							value={date}
@@ -123,29 +144,31 @@ const NewExpense = ({ navigation }) => {
 								if (date) setDate(date);
 								setShow(false);
 							}}
+							maximumDate={new Date()}
 						/>
 					)}
-
 					<View>
 						<View style={{ justifyContent: "center" }}>
-							{categories.length > 0 && categories.every((category) => category.id) && (
-								<RNPickerSelect
-									style={picker}
-									useNativeAndroidPickerStyle={false}
-									itemKey={category}
-									value={category}
-									onValueChange={(value) => setCategory(value)}
-									placeholder={{
-										label: "Category name",
-										value: undefined,
-									}}
-									items={[...categories].map((cat) => ({
-										key: cat.icon,
-										label: cat.name,
-										value: cat.id,
-									}))}
-								/>
-							)}
+							<View style={styles.iconContainer}>
+								<TouchableOpacity onPress={() => setShowCategory(!showCategory)}>
+									<View style={styles.categoryContainer}>
+										<Ionicons
+											name={icon}
+											size={30}
+											color={'black'}
+										/>
+										<Text style={styles.categoryName}> {id}</Text>
+									</View>
+								</TouchableOpacity>
+								{showCategory && (<FlatList
+									data={[...categories].sort((a, b) => a.id > b.id)}
+									renderItem={renderIcons}
+									keyExtractor={(item) => item.key}
+									numColumns={5}
+									contentContainerStyle={styles.list}
+									extraData={icon}
+								/>)}
+							</View>
 						</View>
 						<TouchableOpacity
 							onPress={() => navigation.navigate("NewCategory")}>
@@ -153,13 +176,24 @@ const NewExpense = ({ navigation }) => {
 						</TouchableOpacity>
 						<StatusBar style="auto" />
 					</View>
-
 					<TouchableOpacity
 						onPress={() => createExpense()}>
 						<View style={styles.button}>
 							<Text style={styles.buttonText}>Add</Text>
 						</View>
 					</TouchableOpacity>
+					<View>
+						{loading && (
+							<View style={styles.container}>
+								<Text>Loading...</Text>
+							</View>
+						)}
+						{error && (
+							<View style={styles.container}>
+								<Text>Error : {JSON.stringify(error)}</Text>
+							</View>
+						)}
+					</View>
 					<StatusBar style="auto" />
 				</View>
 			</KeyboardAvoidingView>
@@ -226,6 +260,34 @@ const styles = StyleSheet.create({
 		color: "white",
 		fontSize: 16,
 		fontWeight: "600",
+	},
+	categoryContainer: {
+		display: 'flex',
+		flexDirection: 'row',
+		alignItems: "center",
+		justifyContent: 'center',
+		paddingTop: 9,
+		paddingBottom: 9,
+		borderRadius: 6,
+		marginBottom: 20,
+		backgroundColor: "#eff3f5",
+		borderWidth: 1,
+		borderColor: '#e3e6e8',
+	},
+	categoryName: {
+		alignItems: 'center',
+		justifyContent: 'center',
+		fontSize: 16,
+		fontWeight: "600",
+	},
+	iconContainer: {
+		maxHeight: 400
+	},
+	item: {
+		alignItems: 'center',
+		justifyContent: 'center',
+		width: '21%',
+		paddingVertical: 12,
 	},
 });
 

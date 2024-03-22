@@ -10,20 +10,32 @@ import {
 	FlatList,
 } from "react-native";
 import { showMessage } from "react-native-flash-message";
+import { firebase, db } from "../../firebase";
 import { useState } from "react";
-import { addCategory } from "../redux/actions";
-import { useSelector, useDispatch } from 'react-redux';
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { iconList } from "../utils/Icons";
+import { addDoc, collection, orderBy, query, updateDoc } from "firebase/firestore";
+import { useCollectionData } from "react-firebase-hooks/firestore";
+
 
 const NewCategory = ({ navigation }) => {
-	const categories = useSelector((state) => state.categories);
-	const dispatch = useDispatch();
+	const auth = firebase.getAuth();
+	const user = auth.currentUser;
+	const [show, setShow] = useState(false);
+
+	const [categories, loading, error] = useCollectionData(
+		query(
+			collection(db, "users", user.uid, "categories"),
+			orderBy("name", "asc")
+		)
+	);
+	const usersCollectionRef = collection(db, "users", user.uid, "categories");
 
 	const [name, setName] = useState("");
-	const [icon, setIcon] = useState("");
+	const [icon, setIcon] = useState("cash");
+	const [id, setId] = useState("Cash");
 
-	const createCategory = (catName, catIcon) => {
+	const createCategory = async (catName, catIcon) => {
 		if (!(catName.trim().length > 0)) {
 			showMessage({
 				message: "Please complete all fields",
@@ -33,13 +45,11 @@ const NewCategory = ({ navigation }) => {
 		}
 		let cat = categories.findIndex(e => e.name === catName);
 		if (cat === -1) {
-			dispatch(
-				addCategory({
-					id: categories.length ? categories.length + 1 : 1,
-					name: catName,
-					icon: catIcon ? catIcon : 'wallet'
-				})
-			);
+			const docRef = await addDoc(usersCollectionRef, {
+				name: catName,
+				icon: catIcon,
+			});
+			await updateDoc(docRef, { id: docRef.id });
 			setName("");
 			setIcon("");
 			navigation.goBack();
@@ -52,14 +62,14 @@ const NewCategory = ({ navigation }) => {
 	};
 
 	const renderIcons = ({ item }) => (
-		<TouchableOpacity style={styles.item} key={item.key} onPress={() => setIcon(item.name)}>
-			<Ionicons name={item.name} style={{ color: icon === item.name ? 'green' : '#bfbfbf' }} size={32} />
+		<TouchableOpacity style={styles.item} key={item.key} onPress={() => { setIcon(item.name); setId(item.id); setShow(false); }}>
+			<Ionicons name={item.name} style={{ color: `#${((1 << 24) * Math.random() | 0).toString(16).padStart(6, '0')}` }} size={32} />
 			<Text style={{ fontSize: 10 }}>{item.id}</Text>
 		</TouchableOpacity>
 	);
 
 	return (
-		<TouchableWithoutFeedback onPress={null}>
+		<TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
 			<KeyboardAvoidingView
 				style={styles.container}
 				behavior={undefined}>
@@ -72,14 +82,24 @@ const NewCategory = ({ navigation }) => {
 						maxLength={30}
 					/>
 					<View style={styles.iconContainer}>
-						<FlatList
+						<TouchableOpacity onPress={() => setShow(!show)}>
+							<View style={styles.categoryContainer}>
+								<Ionicons
+									name={icon}
+									size={30}
+									color={'black'}
+								/>
+								<Text style={styles.categoryName}> {id}</Text>
+							</View>
+						</TouchableOpacity>
+						{show && (<FlatList
 							data={[...iconList].sort((a, b) => a.id > b.id)}
 							renderItem={renderIcons}
 							keyExtractor={(item) => item.key}
 							numColumns={5}
 							contentContainerStyle={styles.list}
 							extraData={icon}
-						/>
+						/>)}
 					</View>
 					<TouchableOpacity
 						onPress={() => createCategory(name, icon)}>
@@ -87,6 +107,18 @@ const NewCategory = ({ navigation }) => {
 							<Text style={styles.buttonText}>Add</Text>
 						</View>
 					</TouchableOpacity>
+					<View>
+						{loading && (
+							<View style={styles.container}>
+								<Text>Loading...</Text>
+							</View>
+						)}
+						{error && (
+							<View style={styles.container}>
+								<Text>Error : {JSON.stringify(error)}</Text>
+							</View>
+						)}
+					</View>
 				</View>
 			</KeyboardAvoidingView>
 		</TouchableWithoutFeedback>
@@ -138,6 +170,8 @@ const styles = StyleSheet.create({
 		backgroundColor: "#74CA8D",
 	},
 
+	
+
 	buttonText: {
 		color: "white",
 		fontSize: 16,
@@ -157,5 +191,24 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		width: '21%',
 		paddingVertical: 12,
+	},
+	categoryContainer: {
+		display: 'flex',
+		flexDirection: 'row',
+		alignItems: "center",
+		justifyContent: 'center',
+		paddingTop: 9,
+		paddingBottom: 9,
+		borderRadius: 6,
+		marginBottom: 20,
+		backgroundColor: "#eff3f5",
+		borderWidth: 1,
+		borderColor: '#e3e6e8',
+	},
+	categoryName: {
+		alignItems: 'center',
+		justifyContent: 'center',
+		fontSize: 16,
+		fontWeight: "600",
 	},
 });

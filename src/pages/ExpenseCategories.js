@@ -2,20 +2,56 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { SwipeListView } from "react-native-swipe-list-view";
-import { useDispatch, useSelector } from 'react-redux';
 import { deleteExpense } from "../redux/actions";
+import { firebase, db } from "../../firebase";
+import { useCollectionData } from "react-firebase-hooks/firestore";
+import { collection, query, where } from "firebase/firestore";
 
-
-const parseDateString = (dateString) => {
-	const parts = dateString.split('/');
-	return new Date(parts[2], parts[1] - 1, parts[0]);
+const previousMonth = () => {
+	const date = new Date();
+	date.setDate(0);
+	date.setHours(23);
+	date.setMinutes(59);
+	date.setSeconds(59);
+	date.setMilliseconds(999);
+	return date;
 };
 
+const nextMonth = () => {
+	const date = new Date();
+	date.setDate(1);
+	date.setMonth(date.getMonth() + 1);
+	date.setHours(0);
+	date.setMinutes(0);
+	date.setSeconds(0);
+	date.setMilliseconds(0);
+	return date;
+};
+
+function parseDateString(firestoreDate) {
+	const date = new Date(firestoreDate.seconds * 1000);
+	const day = date.getDate();
+	const month = date.getMonth() + 1;
+	const year = date.getFullYear();
+
+	return `${day}/${month}/${year}`;
+}
+
+const p = previousMonth();
+const n = nextMonth();
+
+
 const ExpenseCategories = ({ navigation, route }) => {
-	const dispatch = useDispatch();
-	const expList = useSelector((state) => state.expenses);
-	const expenses = expList.filter(exp => parseInt(exp.category) === parseInt(route.params.categoryId));
+	const auth = firebase.getAuth();
+	const user = auth.currentUser;
+
 	const reportMonth = parseInt(route.params.monthId);
+	const [expenses] = useCollectionData(
+		query(
+			collection(db, "users", user.uid, "expenses"),
+			where("category", "==", route.params.categoryId)
+		)
+	);
 
 	const renderExpense = ({ item }) => (
 		<View style={styles.expense} key={item.id}>
@@ -26,7 +62,7 @@ const ExpenseCategories = ({ navigation, route }) => {
 					flexDirection: "row",
 					justifyContent: "space-between",
 				}}>
-				<Text style={{ fontSize: 16 }}>{item.date}</Text>
+				<Text style={{ fontSize: 16 }}>{parseDateString(item.date)}</Text>
 				<Text style={{ fontSize: 16, paddingRight: 10 }}>{item.amount} ₹</Text>
 			</View>
 		</View>
@@ -78,7 +114,10 @@ const ExpenseCategories = ({ navigation, route }) => {
 				{expenses && expenses.length > 0 && (
 					<SwipeListView
 						useFlatList={true}
-						data={[...expenses].filter((expense) => parseDateString(expense.date).getMonth() === reportMonth).sort((a, b) => a.name > b.name)}
+						data={[...expenses].filter((exp) => {
+							const eMonth = exp.date.toDate().getMonth();
+							if(eMonth === reportMonth) return exp; 
+						}).sort((a, b) => a.name > b.name)}
 						renderItem={renderExpense}
 						renderHiddenItem={renderSwipeButtons}
 						keyExtractor={(item) => item.id}

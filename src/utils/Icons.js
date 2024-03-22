@@ -158,4 +158,24 @@ export const iconList = [{
     key: 40,
     id: 'Water',
     name: 'water',
+},{
+    key: 41,
+    id: 'Professional',
+    name: 'briefcase',
+},{
+    key: 42,
+    id: 'Account',
+    name: 'business',
+},{
+    key: 43,
+    id: 'Cash',
+    name: 'cash',
+},{
+    key: 44,
+    id: 'Card',
+    name: 'journal',
+},{
+    key: 45,
+    id: 'Person',
+    name: 'person',
 }];

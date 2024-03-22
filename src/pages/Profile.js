@@ -6,7 +6,7 @@ import {
 	View,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { firebase } from "../../firebase";
+import { firebase, db } from "../../firebase";
 import { updateProfile } from "firebase/auth";
 import Dialog from "react-native-dialog";
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -14,58 +14,41 @@ import { StatusBar } from "expo-status-bar";
 import { showMessage } from "react-native-flash-message";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import { useState, useEffect } from "react";
+import { doc, Timestamp, collection, limit, orderBy, query, updateDoc } from "firebase/firestore";
+import { useCollectionData, useDocumentData } from "react-firebase-hooks/firestore";
 
-const auth = firebase.getAuth();
 
 const Profile = () => {
+	const auth = firebase.getAuth();
+	const user = auth.currentUser;
+
 	const [modalVisible, setModalVisible] = useState(false);
-	const [nickname, setNickname] = useState(auth?.currentUser?.displayName);
+	const [nickname, setNickname] = useState(user.displayName);
 	const [budgetModalVisible, setBudgetModalVisible] = useState(false);
-	const [budget, setBudget] = useState(auth?.currentUser?.photoURL);
-
-	useEffect(() => {
-		readData();
-	}, []);
-
-	const readData = async () => {
-		const value = await AsyncStorage.getItem('@budget');
-		if (value !== null) {
-			setBudget(value);
-		}
-	};
-
-	const updateProfileData = (displayName) => {
-		updateProfile(auth.currentUser, {
-			displayName
-		}).then(() => {
-			setNickname(nickname);
-		}).catch((error) => {
+	const [budget2, setBudget] = useState(0);
+	
+	const userInfo = useCollectionData(doc(db, "users", user.uid));
+	
+	const writeBudget = async (value) => {
+		if (value.trim().length === 0) {
 			showMessage({
-				message: "Something went wrong! try again later..",
+				message: "Please enter the budget",
 				type: "danger",
 			});
-		});
-	};
-
-	const writeBudget = async (value) => {
-		await AsyncStorage.setItem(
-			'@budget',
-			budget,
-		);
-
-		if (value !== null) {
-			updateProfile(auth.currentUser, {
-				photoURL: value
-			}).then(() => {
-				setBudget(value);
-				setBudgetModalVisible(!budgetModalVisible)
-			}).catch((error) => {
-				showMessage({
-					message: "Something went wrong! try again later..",
-					type: "danger",
-				});
-			});
 		}
+		if (value.length > 8) {
+			showMessage({
+				message: "Please enter budget amount less than or equal to 8 digits",
+				type: "danger",
+			});
+			return;
+		}
+		await updateDoc(doc(db, "users", auth.currentUser.uid), {
+			budget: value,
+		});
+		// await AsyncStorage.setItem('@budget',budget);
+		setBudget(value);
+		setBudgetModalVisible(!budgetModalVisible)
 	};
 
 	const changeNickname = async (nickname) => {
@@ -93,8 +76,13 @@ const Profile = () => {
 			});
 			return;
 		}
-
-		updateProfileData(nickname);
+		await updateProfile(auth.currentUser, {
+			displayName: nickname,
+		});
+		await updateDoc(doc(db, "users", auth.currentUser.uid), {
+			username: nickname,
+		});
+		setNickname(nickname);
 	};
 
 	const handleSignOut = async () => {
@@ -204,7 +192,7 @@ const Profile = () => {
 				}}>
 				<Dialog.Title>Set Budget</Dialog.Title>
 				<Dialog.Input
-					value={budget}
+					value={budget2}
 					placeholder="Budget"
 					style={styles.dialogInput}
 					onChangeText={setBudget}
@@ -217,7 +205,7 @@ const Profile = () => {
 				/>
 				<Dialog.Button
 					label="Confirm"
-					onPress={() => writeBudget(budget)}
+					onPress={() => writeBudget(budget2)}
 				/>
 			</Dialog.Container>)}
 

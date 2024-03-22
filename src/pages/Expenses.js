@@ -6,33 +6,78 @@ import {
 	TouchableOpacity,
 	View,
 } from "react-native";
-import { firebase } from "../../firebase";
+import { firebase, db } from "../../firebase";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import GaugeExpenses from "../components/GaugeExpenses";
 import { LineChart } from "react-native-chart-kit";
 import { StatusBar } from "expo-status-bar";
 import { SwipeListView } from "react-native-swipe-list-view";
-import { useSelector } from 'react-redux';
 import { useState } from "react";
 import { months } from '../utils/Months';
+import {
+	collection,
+	deleteDoc,
+	doc,
+	getDocs,
+	orderBy,
+	query,
+	where,
+} from "firebase/firestore";
+import { useCollectionData } from "react-firebase-hooks/firestore";
 
-const auth = firebase.getAuth();
 
-const parseDateString = (dateString) => {
-	const parts = dateString.split('/');
-	return new Date(parts[2], parts[1] - 1, parts[0]);
+const previousMonth = () => {
+	const date = new Date();
+	date.setDate(0);
+	date.setHours(23);
+	date.setMinutes(59);
+	date.setSeconds(59);
+	date.setMilliseconds(999);
+	return date;
 };
 
+const nextMonth = () => {
+	const date = new Date();
+	date.setDate(1);
+	date.setMonth(date.getMonth() + 1);
+	date.setHours(0);
+	date.setMinutes(0);
+	date.setSeconds(0);
+	date.setMilliseconds(0);
+	return date;
+};
+
+function getMonthNumber(firestoreDate) {
+	const date = new Date(firestoreDate.seconds * 1000);
+	return date.getDate() + 1;
+}
+
 const Expenses = ({ navigation }) => {
-	const categories = useSelector((state) => state.categories);
-	const expenses = useSelector((state) => state.expenses);
-	const [budget, setBudget] = useState(auth?.currentUser?.photoURL);
+	const auth = firebase.getAuth();
+	const user = auth.currentUser;
+
+	const [categories] = useCollectionData(
+		query(
+			collection(db, "users", user.uid, "categories"),
+			orderBy("name", "asc")
+		)
+	);
+	const [expenses] = useCollectionData(
+		query(collection(db, "users", user.uid, "expenses"))
+	);
+
+
+	const [budget, setBudget] = useState(30000);
 	const [reportMonth, setReportMonth] = useState(parseInt(new Date().getMonth() + 1));
 	const revMonth = [5, 4, 3, 2, 1, 0]
+	
 	const expensesTotal = () => {
+		const p = previousMonth();
+		const n = nextMonth();
+
 		return expenses.filter((exp) => {
-			const dte = parseDateString(exp.date).getMonth() + 1;
-			if (dte === reportMonth) return exp;
+			const eMonth = exp.date.toDate().getMonth() + 1;
+			if(eMonth === reportMonth) return exp; 
 		}).reduce((total, exp) => parseInt(total) + parseInt(exp.amount), 0);
 	};
 
@@ -63,7 +108,7 @@ const Expenses = ({ navigation }) => {
 	const sumLastSixMonths = lastSixMonths.map((noMonth) => {
 		if (expenses) {
 			return expenses
-				.filter((expense) => parseDateString(expense.date).getMonth() === noMonth)
+				.filter((expense) => expense?.date.toDate().getMonth() === noMonth)
 				.reduce((total, expense) => parseInt(total) + parseInt(expense.amount), 0);
 		} else {
 			return 0;
@@ -100,8 +145,8 @@ const Expenses = ({ navigation }) => {
 	const renderCategory = ({ item }) => {
 		const sumExpenseCategory = expenses
 			? expenses
-				.filter((expense) => (expense.category === item.id && parseDateString(expense.date).getMonth() === reportMonth - 1))
-				.reduce((total, expense) => total + expense.amount, 0)
+				.filter((expense) => (expense.category === item.id && expense?.date.toDate().getMonth() === reportMonth - 1))
+				.reduce((total, expense) => parseInt(total) + parseInt(expense.amount), 0)
 			: 0;
 		const rate = budget * sumExpenseCategory / 100;
 		if (sumExpenseCategory === 0) {
@@ -142,8 +187,8 @@ const Expenses = ({ navigation }) => {
 
 			<TouchableOpacity
 				style={[styles.backButton, styles.backButtonRR]}
-				onPress={() => deleteCategy(data.item.id)}>
-				<Ionicons name="trash-outline" color={"#FFF"} size={28} />
+				onPress={async () => await deleteCategy(data.item.id)}>
+				<Ionicons name="trash-outline" color={"#b5b5b5"} size={28} />
 			</TouchableOpacity>
 
 			<TouchableOpacity
@@ -160,8 +205,17 @@ const Expenses = ({ navigation }) => {
 		</View>
 	);
 
-	const deleteCategy = () => {
-		alert('Testing');
+	const deleteCategy = async () => {
+		await deleteDoc(doc(db, "users", user.uid, "categories", id));
+		const expenss = await getDocs(
+			query(
+				collection(db, "users", user.uid, "expenses"),
+				where("category", "==", id.toString())
+			)
+		);
+		expenss.forEach(async (expense) => {
+			await deleteDoc(doc(db, "users", user.uid, "expenses", expense.id));
+		});
 	};
 
 	return (

@@ -8,11 +8,12 @@ import {
 	TouchableWithoutFeedback,
 	View,
 } from "react-native";
-import { firebase } from "../../firebase";
+import { firebase, db } from "../../firebase";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { StatusBar } from "expo-status-bar";
 import { showMessage } from "react-native-flash-message";
 import { useState } from "react";
+import { addDoc, collection, doc, setDoc } from "firebase/firestore";
 
 const auth = firebase.getAuth();
 
@@ -52,6 +53,49 @@ const Registration = ({ navigation }) => {
 			.then(async (userCredential) => {
 				const user = userCredential.user;
 				await updateProfile(user, { displayName: username });
+				await setDoc(doc(db, "users", user.uid), {
+					uid: user.uid,
+					username,
+				});
+				await addDoc(collection(db, "users", user.uid, "categories"), {
+					name: "Wallet",
+					icon: 'wallet',
+				}).then(
+					async (docRef) =>
+						await setDoc(
+							docRef,
+							{
+								id: docRef.id,
+							},
+							{ merge: true }
+						)
+				);
+				await addDoc(collection(db, "users", user.uid, "categories"), {
+					name: "Accounts",
+					icon: 'business',
+				}).then(
+					async (docRef) =>
+						await setDoc(
+							docRef,
+							{
+								id: docRef.id,
+							},
+							{ merge: true }
+						)
+				);
+				await addDoc(collection(db, "users", user.uid, "categories"), {
+					name: "Cash",
+					icon: 'cash',
+				}).then(
+					async (docRef) =>
+						await setDoc(
+							docRef,
+							{
+								id: docRef.id,
+							},
+							{ merge: true }
+						)
+				);
 				navigation.navigate('AuthenticatedTab', { screen: 'Dashboard'});
 			})
 			.catch((e) => {
