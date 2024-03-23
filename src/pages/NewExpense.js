@@ -45,8 +45,8 @@ const NewExpense = ({ navigation }) => {
 	const [date, setDate] = useState(new Date());
 	const [show, setShow] = useState(false);
 	const [showCategory, setShowCategory] = useState(false);
-	const [icon, setIcon] = useState("cash");
-	const [id, setId] = useState("Cash");
+	const [icon, setIcon] = useState("");
+	const [id, setId] = useState("");
 
 	const createExpense = async () => {
 		if (!(expense.trim().length > 0 && amount.trim().length > 0)) {
@@ -90,6 +90,8 @@ const NewExpense = ({ navigation }) => {
 		setExpense('');
 		setAmount('');
 		setDate(new Date());
+		setIcon('');
+		setId('');
 
 		navigation.navigate('Dashboard');
 	};
@@ -157,7 +159,7 @@ const NewExpense = ({ navigation }) => {
 											size={30}
 											color={'black'}
 										/>
-										<Text style={styles.categoryName}> {id}</Text>
+										<Text style={styles.categoryName}> {id ? id : 'Select Category'}</Text>
 									</View>
 								</TouchableOpacity>
 								{showCategory && (<FlatList

@@ -5,14 +5,15 @@ import {
 	TouchableHighlight,
 	TouchableOpacity,
 	View,
+	FlatList,
 } from "react-native";
 import { firebase, db } from "../../firebase";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import GaugeExpenses from "../components/GaugeExpenses";
 import { LineChart } from "react-native-chart-kit";
 import { StatusBar } from "expo-status-bar";
-import { SwipeListView } from "react-native-swipe-list-view";
-import { useState } from "react";
+// import { SwipeListView } from "react-native-swipe-list-view";
+import { useState, useEffect } from "react";
 import { months } from '../utils/Months';
 import {
 	collection,
@@ -47,10 +48,10 @@ const nextMonth = () => {
 	return date;
 };
 
-function getMonthNumber(firestoreDate) {
-	const date = new Date(firestoreDate.seconds * 1000);
-	return date.getDate() + 1;
-}
+// function getMonthNumber(firestoreDate) {
+// 	const date = new Date(firestoreDate.seconds * 1000);
+// 	return date.getDate() + 1;
+// }
 
 const Expenses = ({ navigation }) => {
 	const auth = firebase.getAuth();
@@ -66,25 +67,47 @@ const Expenses = ({ navigation }) => {
 		query(collection(db, "users", user.uid, "expenses"))
 	);
 
-
-	const [budget, setBudget] = useState(30000);
+	const [budget, setBudget] = useState('0');
 	const [reportMonth, setReportMonth] = useState(parseInt(new Date().getMonth() + 1));
 	const revMonth = [5, 4, 3, 2, 1, 0]
+	const [initializing, setInitializing] = useState(true);
+
+	const getBudget = async () => {
+		await getDocs(collection(db, "users"), user.uid).then(snapshot => {
+			const newData = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+			setBudget(newData[0].budget);
+			setInitializing(false);
+			setTimeout(() => {
+				setInitializing(true);
+			}, 0);
+		});
+	};
+
+	useEffect(() => {
+		getBudget();
+	}, []);
 	
+	useEffect(() => {
+		const unsubscribe = navigation.addListener('tabPress', (e) => {
+			getBudget();
+		});
+		return unsubscribe;
+	}, [navigation]);
+
 	const expensesTotal = () => {
 		const p = previousMonth();
 		const n = nextMonth();
 
 		return expenses.filter((exp) => {
 			const eMonth = exp.date.toDate().getMonth() + 1;
-			if(eMonth === reportMonth) return exp; 
+			if(eMonth === reportMonth) return exp;
 		}).reduce((total, exp) => parseInt(total) + parseInt(exp.amount), 0);
 	};
 
 	const exp = expenses ? expensesTotal() : 0;
-	const max = budget;
+	const max = parseInt(budget);
 	const percentage = expenses && expenses.length > 0
-		? Math.round((expensesTotal() / budget) * 100)
+		? Math.round((expensesTotal() / parseInt(budget)) * 100)
 		: 0;
 
 	const calculateLastSixMonths = () => {
@@ -132,7 +155,7 @@ const Expenses = ({ navigation }) => {
 		backgroundGradientTo: "#fff",
 		backgroundGradientToOpacity: 0.5,
 		color: (opacity = 1) => `rgba(75, 161, 68, ${opacity})`,
-		strokeWidth: 2,
+		decimalPlaces: 0,
 		barPercentage: 0.5,
 		useShadowColorFromDataset: false,
 		propsForDots: {
@@ -148,14 +171,14 @@ const Expenses = ({ navigation }) => {
 				.filter((expense) => (expense.category === item.id && expense?.date.toDate().getMonth() === reportMonth - 1))
 				.reduce((total, expense) => parseInt(total) + parseInt(expense.amount), 0)
 			: 0;
-		const rate = budget * sumExpenseCategory / 100;
+		const rate = parseInt(budget) * sumExpenseCategory / 100;
 		if (sumExpenseCategory === 0) {
 			return <></>;
 		}
 		return (
 			<TouchableHighlight
 				key={item.id}
-				style={styles.category}
+				style={styles.categoryContainer}
 				underlayColor="#f5f5f5"
 				onPress={() => {
 					navigation.navigate("ExpenseCategories", {
@@ -165,12 +188,12 @@ const Expenses = ({ navigation }) => {
 					});
 				}}>
 				<>
-					<Text style={{ fontSize: 16, paddingLeft: 10 }}>{item.name}</Text>
-					<View style={{ flexDirection: "row", fontSize: 16, paddingRight: 10 }}>
-						{rate < 0.7 && (<Text style={{ color: "green" }}>{sumExpenseCategory} ₹</Text>)}
-						{rate >= 0.7 && rate < 0.9 && (<Text style={{ color: "#e67e00" }}>{sumExpenseCategory} ₹</Text>)}
-						{rate >= 0.9 && rate < 1 && (<Text style={{ color: "red" }}>{sumExpenseCategory} ₹</Text>)}
-						{rate >= 1.0 && (<Text style={{ color: "#8c1818" }}>{sumExpenseCategory} ₹</Text>)}
+					<View style={styles.item}>
+						<Ionicons name={item.icon} style={styles.icon} size={35} />
+						<View style={styles.details}>
+							<Text style={styles.name}>{item.name}</Text>
+						</View>
+						<Text style={styles.amount}>{sumExpenseCategory} ₹</Text>
 					</View>
 				</>
 			</TouchableHighlight>
@@ -224,12 +247,12 @@ const Expenses = ({ navigation }) => {
 				style={[
 					styles.semi,
 					styles.container,
-					{ backgroundColor: "#2a3e48" },
+					{ backgroundColor: "#2a3e48", paddingBottom: 20 },
 				]}>
-				<GaugeExpenses exp={exp} max={max} percentage={percentage} month={reportMonth} />
+				{initializing && <GaugeExpenses exp={exp} max={max} percentage={percentage} month={reportMonth} />}
 			</View>
 
-			<View style={styles.slide2}>
+			<View style={styles.chartContainer}>
 				<LineChart
 					data={data}
 					width={Dimensions.get("window").width}
@@ -256,7 +279,7 @@ const Expenses = ({ navigation }) => {
 				/>
 			</View>
 
-			<View style={styles.semi}>
+			<View style={styles.categoryWiseContainer}>
 				{categories && categories.length === 0 && (
 					<View style={{ marginTop: 20 }}>
 						<Text style={{ alignSelf: "center" }}>
@@ -264,18 +287,31 @@ const Expenses = ({ navigation }) => {
 						</Text>
 					</View>
 				)}
-
+				{/* <Text style={styles.title}>{`${monthNames[reportMonth - 1]} Expenses Categories`}</Text> */}
 				{categories && categories.length > 0 && (
-					<SwipeListView
-						style={styles.swipeListView}
-						useFlatList={true}
+					<FlatList
+						style={styles.listExpenses}
 						data={categories}
 						renderItem={renderCategory}
-						renderHiddenItem={renderSwipeButtons}
-						keyExtractor={(item) => item.id}
-						leftOpenValue={75}
-						rightOpenValue={-150}
+						keyExtractor={(_item, index) => _item.id}
+						ListEmptyComponent={() => (
+							<View style={styles.container}>
+								<Text>
+									You have no expense. Start adding your expenses!
+								</Text>
+							</View>
+						)}
 					/>
+					// <SwipeListView
+					// 	style={styles.swipeListView}
+					// 	useFlatList={true}
+					// 	data={categories}
+					// 	renderItem={renderCategory}
+					// 	renderHiddenItem={renderSwipeButtons}
+					// 	keyExtractor={(item) => item.id}
+					// 	leftOpenValue={75}
+					// 	rightOpenValue={-150}
+					// />
 				)}
 			</View>
 			<StatusBar style="auto" />
@@ -291,12 +327,22 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 	},
 
-	semi: { flex: 1, alignSelf: "stretch" },
+	semi: {
+		flex: 1,
+		alignSelf: "stretch",
+		paddingTop: 60,
+	},
 
-	slide2: {
+	categoryContainer: {
+		flex: 1,
+		alignSelf: "stretch",
+	},
+
+	chartContainer: {
 		flex: 1,
 		justifyContent: "center",
 		backgroundColor: "#fff",
+		marginTop: 30,
 	},
 
 	dot: {
@@ -320,13 +366,22 @@ const styles = StyleSheet.create({
 
 	category: {
 		flexDirection: "row",
-		minWidth: "60%",
+		minWidth: "100%",
 		justifyContent: "space-between",
 		borderBottomWidth: 1,
 		borderBottomColor: "#E8E8E8",
 		paddingTop: 16,
 		paddingBottom: 16,
 		backgroundColor: "white",
+	},
+
+	categoryWiseContainer: {
+		flex: 1,
+		width: '100%',
+		paddingBottom: 2,
+		backgroundColor: "white",
+		borderTopWidth: 1,
+		borderTopColor: '#b5b5b5'
 	},
 
 	swipeButtons: {
@@ -362,7 +417,42 @@ const styles = StyleSheet.create({
 
 	swipeListView: {
 		paddingTop: 15,
-	}
+	},
+
+	title: {
+		fontSize: 18,
+		fontWeight: "400",
+		alignSelf: "flex-start",
+	},
+
+	item: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		padding: 6,
+		borderBottomWidth: 1,
+		borderBottomColor: '#cccccc',
+	},
+	icon: {
+		fontSize: 35,
+		marginRight: 16,
+		color: 'grey',
+	},
+	details: {
+		flex: 1,
+	},
+	name: {
+		fontSize: 16,
+		fontWeight: '500',
+	},
+	description: {
+		fontSize: 14,
+		color: '#999999',
+	},
+	amount: {
+		fontSize: 16,
+		fontWeight: '500',
+		marginLeft: 16,
+	},
 });
 
 export default Expenses;

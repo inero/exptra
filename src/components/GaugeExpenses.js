@@ -10,7 +10,7 @@ const GaugeExpenses = ({ exp, max, percentage, month }) => {
 					value={exp}
 					valueSuffix={` ₹`}
 					radius={125}
-					duration={2000}
+					duration={500}
 					textColor={"#ecf0f1"}
 					maxValue={max}
 					title={`${percentage}% spent on ${monthNames[month-1]}`}
@@ -25,10 +25,11 @@ const GaugeExpenses = ({ exp, max, percentage, month }) => {
 					value={exp}
 					valueSuffix={` ₹`}
 					radius={120}
-					duration={2000}
+					duration={500}
 					textColor={"#ecf0f1"}
+					activeStrokeColor={((max >= 0) && (exp > max)) ? '#e84118' : '#2ecc71'}
 					maxValue={exp}
-					title={`Total expenses`}
+					title={((max >= 0) && (exp > max)) ? `Over spent ₹ ${exp-max}` : `Total expenses`}
 					titleColor={"white"}
 					titleStyle={{ fontSize: 16, fontWeight: "400" }}
 					textStyle={{ fontSize: 35, fontWeight: "500" }}

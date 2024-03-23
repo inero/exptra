@@ -1,5 +1,5 @@
 import Dashboard from "../pages/Dashboard";
-import Chatbot from "../pages/Chatbot";
+// import Chatbot from "../pages/Chatbot";
 import ExpensesStack from "./ExpensesStack";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import NewExpenseStack from "./NewExpenseStack";
@@ -33,13 +33,16 @@ const AuthenticatedTab = ({ navigation }) => {
 					headerTitleAlign: "center",
 					tabBarActiveTintColor: "#5DB075",
 					tabBarStyle: {
-						height: 60
+						height: 65,
+						backgroundColor: '#2a3e48'
 					},
 					tabBarItemStyle: {
 						marginBottom: 10,
+						marginTop: 8,
 					},
 					tabBarLabelStyle: {
-						fontWeight: '600'
+						fontSize: 11,
+						fontWeight: '500'
 					}
 				}}>
 				<Tab.Screen
@@ -48,7 +51,7 @@ const AuthenticatedTab = ({ navigation }) => {
 					options={{
 						headerShown: false,
 						tabBarIcon: ({ color, size }) => (
-							<Ionicons name="home-outline" color={color} size={size} />
+							<Ionicons name="home-outline" color={color} size={30} />
 						),
 					}}
 				/>
@@ -59,7 +62,7 @@ const AuthenticatedTab = ({ navigation }) => {
 						headerShown: false,
 						title: "Expense",
 						tabBarIcon: ({ color, size }) => (
-							<Ionicons name="wallet-outline" color={color} size={size} />
+							<Ionicons name="wallet-outline" color={color} size={30} />
 						),
 					}}
 				/>
@@ -70,11 +73,21 @@ const AuthenticatedTab = ({ navigation }) => {
 						headerShown: false,
 						title: "New Expense",
 						tabBarIcon: ({ color, size }) => (
-							<Ionicons name="add-circle-outline" color={color} size={size} />
+							<Ionicons name="add-circle-outline" color={color} size={30} />
 						),
 					}}
 				/>
 				<Tab.Screen
+					name="Profile"
+					component={Profile}
+					options={{
+						headerShown: false,
+						tabBarIcon: ({ color, size }) => (
+							<Ionicons name="person-circle-outline" color={color} size={30} />
+						),
+					}}
+				/>
+				{/* <Tab.Screen
 					name="Chatbot"
 					component={Chatbot}
 					options={{
@@ -87,17 +100,7 @@ const AuthenticatedTab = ({ navigation }) => {
 							/>
 						),
 					}}
-				/>
-				<Tab.Screen
-					name="Profile"
-					component={Profile}
-					options={{
-						headerShown: false,
-						tabBarIcon: ({ color, size }) => (
-							<Ionicons name="person-circle-outline" color={color} size={size} />
-						),
-					}}
-				/>
+				/> */}
 			</Tab.Navigator>
 			<FloatingAction
 				actions={actions}

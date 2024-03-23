@@ -12,7 +12,7 @@ const ExpensesStack = () => (
 		<Stack.Screen
 			name="Expenses"
 			component={Expenses}
-			options={{ title: "Expenses" }}
+			options={{ title: "Expenses", headerShown: false, }}
 		/>
 
 		<Stack.Screen

@@ -32,11 +32,11 @@ const NewCategory = ({ navigation }) => {
 	const usersCollectionRef = collection(db, "users", user.uid, "categories");
 
 	const [name, setName] = useState("");
-	const [icon, setIcon] = useState("cash");
-	const [id, setId] = useState("Cash");
+	const [icon, setIcon] = useState("");
+	const [id, setId] = useState("");
 
 	const createCategory = async (catName, catIcon) => {
-		if (!(catName.trim().length > 0)) {
+		if (!(catName.trim().length > 0) || !(id.trim().length > 0)) {
 			showMessage({
 				message: "Please complete all fields",
 				type: "danger",
@@ -50,8 +50,11 @@ const NewCategory = ({ navigation }) => {
 				icon: catIcon,
 			});
 			await updateDoc(docRef, { id: docRef.id });
+
 			setName("");
 			setIcon("");
+			setId('');
+
 			navigation.goBack();
 		} else {
 			showMessage({
@@ -89,7 +92,7 @@ const NewCategory = ({ navigation }) => {
 									size={30}
 									color={'black'}
 								/>
-								<Text style={styles.categoryName}> {id}</Text>
+								<Text style={styles.categoryName}> {id ? id : 'Select Category'}</Text>
 							</View>
 						</TouchableOpacity>
 						{show && (<FlatList

@@ -1,14 +1,12 @@
 import { FlatList, StyleSheet, Text, View, TouchableOpacity } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { firebase, db } from "../../firebase";
 import GaugeExpenses from "../components/GaugeExpenses";
 import { StatusBar } from "expo-status-bar";
 import Dialog from "react-native-dialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { updateProfile } from "firebase/auth";
 import { useCollectionData } from "react-firebase-hooks/firestore";
-import { addDoc, Timestamp, collection, limit, orderBy, query, doc, updateDoc } from "firebase/firestore";
+import { getDocs, collection, orderBy, query, doc, updateDoc } from "firebase/firestore";
 import { monthNames } from "../utils/Months";
 
 const previousMonth = () => {
@@ -44,13 +42,14 @@ function parseDateString(firestoreDate) {
 const p = previousMonth();
 const n = nextMonth();
 
-const Dashboard = () => {
+const Dashboard = ({ navigation }) => {
 	const auth = firebase.getAuth();
 	const user = auth.currentUser;
 
 	const [modalVisible, setModalVisible] = useState(false);
-	const [budget, setBudget] = useState(0);
+	const [budget, setBudget] = useState('0');
 	const [reportMonth] = useState(parseInt(new Date().getMonth() + 1));
+	const [initializing, setInitializing] = useState(true);
 
 	const [categories] = useCollectionData(
 		query(collection(db, "users", user.uid, "categories"))
@@ -60,8 +59,30 @@ const Dashboard = () => {
 		query(collection(db, "users", user.uid, "expenses"))
 	);
 
+	const getBudget = async () => {
+		await getDocs(collection(db, "users"), user.uid).then(snapshot => {
+			const newData = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+			setBudget(newData[0].budget);
+			setInitializing(false);
+			setTimeout(() => {
+				setInitializing(true);
+			}, 0);
+		});
+	};
+
+	useEffect(() => {
+			getBudget();
+	}, []);
+	
+	useEffect(() => {
+		const unsubscribe = navigation.addListener('tabPress', (e) => {
+			getBudget();
+		});
+		return unsubscribe;
+	}, [navigation]);
+
 	const writeBudget = async (value) => {
-		if(value.trim().length === 0){
+		if (value.trim().length === 0) {
 			showMessage({
 				message: "Please enter the budget",
 				type: "danger",
@@ -75,9 +96,9 @@ const Dashboard = () => {
 			return;
 		}
 		await updateDoc(doc(db, "users", auth.currentUser.uid), {
-			budget: value,
+			budget: parseInt(value),
 		});
-		setBudget(value);
+		setBudget(parseInt(value));
 	};
 
 	const expensesTotal = () => {
@@ -89,9 +110,9 @@ const Dashboard = () => {
 	};
 
 	const exp = expenses ? expensesTotal() : 0;
-	const max = budget;
+	const max = parseInt(budget);
 	const percentage = expenses && expenses.length > 0
-		? Math.round((expensesTotal() / budget) * 100)
+		? Math.round((expensesTotal() / parseInt(budget)) * 100)
 		: 0;
 
 	const [latestExpenses] = useCollectionData(
@@ -128,8 +149,8 @@ const Dashboard = () => {
 						backgroundColor: "#2a3e48",
 					},
 				]}>
-				<GaugeExpenses exp={exp} max={max} percentage={percentage} month={reportMonth} />
-				{(exp > max) &&
+				{initializing && <GaugeExpenses exp={exp} max={max} percentage={percentage} month={reportMonth} />}
+				{(budget === 0 && exp > max) &&
 					(<TouchableOpacity onPress={() => setModalVisible(true)}>
 						<View style={styles.budgetContainer}>
 							<Text style={styles.setBudget}>Set budget</Text>
@@ -141,9 +162,10 @@ const Dashboard = () => {
 					onBackdropPress={() => {
 						setModalVisible(false);
 					}}>
-					<Dialog.Title>Set Budget</Dialog.Title>
+					<Dialog.Title style={{ color: 'black' }}>Set Budget</Dialog.Title>
 					<Dialog.Input
 						value={budget}
+						style={{ color: 'black' }}
 						placeholder="Budget"
 						onChangeText={setBudget}
 						maxLength={20}
@@ -165,7 +187,7 @@ const Dashboard = () => {
 
 			<View style={styles.semi}>
 				<View style={styles.latestExpenses}>
-					<Text style={styles.title}>{`${monthNames[reportMonth-1]} Month Expenses`}</Text>
+					<Text style={styles.title}>{`${monthNames[reportMonth - 1]} Expenses`}</Text>
 
 					{latestExpenses && (
 						<FlatList
@@ -253,7 +275,7 @@ const styles = StyleSheet.create({
 	icon: {
 		fontSize: 35,
 		marginRight: 16,
-		color: 'green',
+		color: 'grey',
 	},
 	details: {
 		flex: 1,

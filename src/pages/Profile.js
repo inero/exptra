@@ -14,21 +14,29 @@ import { StatusBar } from "expo-status-bar";
 import { showMessage } from "react-native-flash-message";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import { useState, useEffect } from "react";
-import { doc, Timestamp, collection, limit, orderBy, query, updateDoc } from "firebase/firestore";
-import { useCollectionData, useDocumentData } from "react-firebase-hooks/firestore";
+import { doc, getDocs, collection, updateDoc } from "firebase/firestore";
 
 
-const Profile = () => {
+const Profile = ({navigation}) => {
 	const auth = firebase.getAuth();
 	const user = auth.currentUser;
 
 	const [modalVisible, setModalVisible] = useState(false);
 	const [nickname, setNickname] = useState(user.displayName);
 	const [budgetModalVisible, setBudgetModalVisible] = useState(false);
-	const [budget2, setBudget] = useState(0);
-	
-	const userInfo = useCollectionData(doc(db, "users", user.uid));
-	
+	const [budget, setBudget] = useState(0);
+
+	useEffect(() => {
+		getBudget();
+	}, []);
+
+	const getBudget = async () => {
+		await getDocs(collection(db, "users"), user.uid).then(snapshot => {
+			const newData = snapshot.docs.map((doc) => ({...doc.data(), id:doc.id }));
+			setBudget(newData[0].budget);
+		});
+	}
+
 	const writeBudget = async (value) => {
 		if (value.trim().length === 0) {
 			showMessage({
@@ -46,9 +54,8 @@ const Profile = () => {
 		await updateDoc(doc(db, "users", auth.currentUser.uid), {
 			budget: value,
 		});
-		// await AsyncStorage.setItem('@budget',budget);
 		setBudget(value);
-		setBudgetModalVisible(!budgetModalVisible)
+		setBudgetModalVisible(!budgetModalVisible);
 	};
 
 	const changeNickname = async (nickname) => {
@@ -143,7 +150,7 @@ const Profile = () => {
 							style={styles.menuIcon}
 							size={15}
 						/>
-						<Text style={styles.menuText}>Change budget</Text>
+						<Text style={styles.menuText}>Change budget - {budget} </Text>
 					</View>
 				</TouchableOpacity>
 
@@ -159,12 +166,12 @@ const Profile = () => {
 				</TouchableOpacity>
 			</View>
 
-			<Dialog.Container
+			{modalVisible && (<Dialog.Container
 				visible={modalVisible}
 				onBackdropPress={() => {
 					setModalVisible(false);
 				}}>
-				<Dialog.Title>Change nickname</Dialog.Title>
+				<Dialog.Title style={{ color: 'black' }}>Change nickname</Dialog.Title>
 				<Dialog.Input
 					value={nickname}
 					placeholder="New nickname"
@@ -183,16 +190,16 @@ const Profile = () => {
 						setModalVisible(!modalVisible);
 					}}
 				/>
-			</Dialog.Container>
+			</Dialog.Container>)}
 
 			{budgetModalVisible && (<Dialog.Container
 				visible={budgetModalVisible}
 				onBackdropPress={() => {
 					setBudgetModalVisible(false);
 				}}>
-				<Dialog.Title>Set Budget</Dialog.Title>
+				<Dialog.Title style={{ color: 'black' }}>Set Budget</Dialog.Title>
 				<Dialog.Input
-					value={budget2}
+					value={budget}
 					placeholder="Budget"
 					style={styles.dialogInput}
 					onChangeText={setBudget}
@@ -205,7 +212,7 @@ const Profile = () => {
 				/>
 				<Dialog.Button
 					label="Confirm"
-					onPress={() => writeBudget(budget2)}
+					onPress={() => writeBudget(budget)}
 				/>
 			</Dialog.Container>)}
 

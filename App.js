@@ -12,14 +12,11 @@ import { useDispatch } from 'react-redux';
 import { useAuthState } from "react-firebase-hooks/auth";
 
 const App = () => {
-  // const auth = firebase.getAuth();
   const [currentUser] = useAuthState(auth);
-  // const [currentUser] = useState(auth?.currentUser);
   const [initializing, setInitializing] = useState(true);
   const dispatch = useDispatch();
 
   const onAuthStateChangedHandler = (user) => {
-    // setCurrentUser(user);
     if (initializing) {
       setInitializing(false);
     }

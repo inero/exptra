@@ -5,16 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b77d93e9-fa9e-4fae-b110-797f93ad50d1" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/firebase.js" beforeDir="false" afterPath="$PROJECT_DIR$/firebase.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/App.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/GaugeExpenses.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/GaugeExpenses.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pages/Dashboard.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/Dashboard.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pages/ExpenseCategories.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/ExpenseCategories.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pages/Expenses.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/Expenses.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pages/NewCategory.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/NewCategory.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pages/NewExpense.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/NewExpense.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/pages/Profile.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/Profile.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/pages/Registration.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/Registration.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/utils/Icons.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/Icons.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/routes/AuthenticatedTab.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/routes/AuthenticatedTab.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/routes/ExpensesStack.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/routes/ExpensesStack.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,17 +36,17 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "exptra",
-    "last_opened_file_path": "D:/work/exptra"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;exptra&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/work/exptra&quot;
   }
-}]]></component>
+}</component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
