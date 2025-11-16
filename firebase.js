@@ -1,25 +1,66 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { initializeApp } from "firebase/app";
-import * as firebase from "firebase/auth";
-import { initializeAuth } from "firebase/auth";
-import { getReactNativePersistence } from "firebase/auth/react-native";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { 
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  sendEmailVerification,
+  updateProfile,
+  updateEmail,
+  updatePassword
+} from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { firebaseConfig } from "./firebaseConfig";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyD6CQ7RC6CPWnf75TTxkSwFH6QAOyaNNe4",
-  authDomain: "fir-auth-aaa2e.firebaseapp.com",
-  projectId: "fir-auth-aaa2e",
-  storageBucket: "fir-auth-aaa2e.appspot.com",
-  messagingSenderId: "904217172879",
-  appId: "1:904217172879:web:b39b700ac2266d642d89fa",
+// Singleton pattern - Initialize Firebase app only once globally
+let firebaseApp;
+let firebaseAuth;
+let firebaseDb;
+let firebaseStorage;
+
+const initializeFirebase = () => {
+  if (!firebaseApp) {
+    firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  }
+  
+  if (!firebaseAuth) {
+    firebaseAuth = getAuth(firebaseApp);
+  }
+  
+  if (!firebaseDb) {
+    firebaseDb = getFirestore(firebaseApp);
+  }
+  
+  if (!firebaseStorage) {
+    firebaseStorage = getStorage(firebaseApp);
+  }
+  
+  return {
+    app: firebaseApp,
+    auth: firebaseAuth,
+    db: firebaseDb,
+    storage: firebaseStorage
+  };
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = initializeAuth(app, {
-	persistence: getReactNativePersistence(AsyncStorage),
-});
-const db = getFirestore(app);
-const storage = getStorage(app);
+// Initialize immediately
+const { app, auth, db, storage } = initializeFirebase();
+
+// Create firebase namespace for backward compatibility
+const firebase = {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  sendEmailVerification,
+  updateProfile,
+  updateEmail,
+  updatePassword,
+  getAuth: () => auth,
+};
 
 export { firebase, auth, db, storage };

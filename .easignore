@@ -1,0 +1,10 @@
+# EAS Build ignore file
+.expo/
+.expo-shared/
+node_modules/.cache/
+*.log
+.DS_Store
+.git/
+.vscode/
+.idea/
+error-log.md

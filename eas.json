@@ -2,17 +2,26 @@
     "build": {
         "preview": {
             "android": {
-                "buildType": "apk"
+                "buildType": "apk",
+                "node": "18.18.0"
             }
         },
         "preview2": {
             "android": {
-                "gradleCommand": ":app:assembleRelease"
+                "gradleCommand": ":app:assembleRelease",
+                "node": "18.18.0"
             }
         },
         "preview3": {
-            "developmentClient": true
+            "developmentClient": true,
+            "android": {
+                "node": "18.18.0"
+            }
         },
-        "production": {}
+        "production": {
+            "android": {
+                "node": "18.18.0"
+            }
+        }
     }
 }

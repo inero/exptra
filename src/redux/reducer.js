@@ -28,7 +28,7 @@ const expenseReducer = (state = initialState, action) => {
         case LOAD_MESSAGES:
             return {
                 ...state,
-                messages: [...messages, action.payload]
+                messages: [...state.messages, action.payload]
             };
         case LOAD_EXPENSES:
             return {

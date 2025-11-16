@@ -63,7 +63,7 @@ const ExpenseCategories = ({ navigation, route }) => {
 					justifyContent: "space-between",
 				}}>
 				<Text style={{ fontSize: 16 }}>{parseDateString(item.date)}</Text>
-				<Text style={{ fontSize: 16, paddingRight: 10 }}>{item.amount} ₹</Text>
+				<Text style={{ fontSize: 16, paddingRight: 10 }}>Rs.{item.amount}</Text>
 			</View>
 		</View>
 	);

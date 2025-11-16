@@ -8,7 +8,7 @@ const GaugeExpenses = ({ exp, max, percentage, month }) => {
 			{exp <= max && (
 				<CircularProgress
 					value={exp}
-					valueSuffix={` ₹`}
+					valueSuffix={` Rs`}
 					radius={125}
 					duration={500}
 					textColor={"#ecf0f1"}
@@ -23,13 +23,13 @@ const GaugeExpenses = ({ exp, max, percentage, month }) => {
 			{exp > max && (
 				<CircularProgress
 					value={exp}
-					valueSuffix={` ₹`}
+					valueSuffix={` Rs`}
 					radius={120}
 					duration={500}
 					textColor={"#ecf0f1"}
 					activeStrokeColor={((max >= 0) && (exp > max)) ? '#e84118' : '#2ecc71'}
 					maxValue={exp}
-					title={((max >= 0) && (exp > max)) ? `Over spent ₹ ${exp-max}` : `Total expenses`}
+					title={((max >= 0) && (exp > max)) ? `Over spent Rs ${exp-max}` : `Total expenses`}
 					titleColor={"white"}
 					titleStyle={{ fontSize: 16, fontWeight: "400" }}
 					textStyle={{ fontSize: 35, fontWeight: "500" }}

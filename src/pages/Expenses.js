@@ -193,7 +193,7 @@ const Expenses = ({ navigation }) => {
 						<View style={styles.details}>
 							<Text style={styles.name}>{item.name}</Text>
 						</View>
-						<Text style={styles.amount}>{sumExpenseCategory} ₹</Text>
+						<Text style={styles.amount}>Rs.{sumExpenseCategory}</Text>
 					</View>
 				</>
 			</TouchableHighlight>

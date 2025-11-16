@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, Button, StyleSheet, Alert } from 'react-native';
-import firebase from 'firebase/app';
-import 'firebase/auth';
+import { auth } from '../../firebase';
+import { sendEmailVerification } from 'firebase/auth';
 
 const EmailValidation = () => {
-  const currentUser = firebase.auth().currentUser;
+  const currentUser = auth.currentUser;
 
   const handleSendVerificationEmail = () => {
     if (!currentUser) {
@@ -12,7 +12,7 @@ const EmailValidation = () => {
       return;
     }
 
-    currentUser.sendEmailVerification()
+    sendEmailVerification(currentUser)
       .then(() => {
         Alert.alert('Verification Email Sent', 'Please check your email inbox to verify your email address.');
       })
